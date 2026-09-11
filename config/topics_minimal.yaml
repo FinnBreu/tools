@@ -1,0 +1,7 @@
+topics:
+  - /tf
+  - /tf_static
+  - /rosout
+  - /<vehicle>/odometry
+  - /<vehicle>/imu
+  - /<vehicle>/barometer/height

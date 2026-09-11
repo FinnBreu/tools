@@ -1,0 +1,18 @@
+topics:
+  - /clock
+  - /tf
+  - /tf_static
+  - /rosout
+  - /<vehicle>/odometry
+  - /<vehicle>/odometry_naive
+  - /<vehicle>/ground_truth/pose
+  - /<vehicle>/imu
+  - /<vehicle>/heading_target
+  - /<vehicle>/angular_velocity_setpoint
+  - /<vehicle>/thrust_setpoint
+  - /<vehicle>/torque_setpoint
+  - /<vehicle>/thruster_command
+  - /<vehicle>/path_follower/debug
+  - /<vehicle>/attitude_controller/debug
+  - /<vehicle>/rate_controller/rates_debug
+  - /<vehicle>/marker

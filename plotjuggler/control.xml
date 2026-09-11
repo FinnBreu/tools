@@ -1,0 +1,49 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<root>
+ <tabbed_widget parent="main_window" name="Main Window">
+  <Tab containers="2" tab_name="Control">
+   <Container>
+    <DockSplitter orientation="|" sizes="1;1" count="2">
+     <DockArea name="Depth">
+      <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
+       <range left="0" right="60" bottom="-2" top="2"/>
+       <limitY/>
+       <curve color="#1f77b4" name="/uuv02/odometry/pose/pose/position/z"/>
+       <curve color="#d62728" name="/uuv00/odometry/pose/pose/position/z"/>
+      </plot>
+     </DockArea>
+     <DockArea name="Actuation">
+      <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
+       <range left="0" right="60" bottom="-1" top="1"/>
+       <limitY/>
+       <curve color="#2ca02c" name="/uuv02/thrust_setpoint/x"/>
+       <curve color="#ff7f0e" name="/uuv02/torque_setpoint/x"/>
+      </plot>
+     </DockArea>
+    </DockSplitter>
+   </Container>
+  </Tab>
+  <currentTabIndex index="0"/>
+ </tabbed_widget>
+ <use_relative_time_offset enabled="1"/>
+ <Plugins>
+  <plugin ID="DataLoad MCAP"/>
+  <plugin ID="DataLoad ROS2 bags">
+   <use_header_stamp value="false"/>
+   <discard_large_arrays value="true"/>
+   <max_array_size value="100"/>
+   <boolean_strings_to_number value="true"/>
+   <remove_suffix_from_strings value="true"/>
+   <selected_topics value=""/>
+  </plugin>
+  <plugin ID="ROS2 Topic Subscriber">
+   <use_header_stamp value="false"/>
+   <discard_large_arrays value="true"/>
+   <max_array_size value="100"/>
+   <boolean_strings_to_number value="true"/>
+   <remove_suffix_from_strings value="true"/>
+   <selected_topics value="/uuv02/odometry;/uuv02/thrust_setpoint;/uuv02/torque_setpoint;/uuv00/odometry"/>
+  </plugin>
+  <plugin ID="CSV Exporter"/>
+ </Plugins>
+</root>

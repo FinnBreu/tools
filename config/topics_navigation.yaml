@@ -1,0 +1,14 @@
+topics:
+  - /tf
+  - /tf_static
+  - /rosout
+  - /<vehicle>/imu
+  - /<vehicle>/pressure
+  - /<vehicle>/temperature
+  - /<vehicle>/barometer/height
+  - /<vehicle>/odometry
+  - /<vehicle>/odometry_naive
+  - /<vehicle>/calibration/gyroscope_bias
+  - /<vehicle>/calibration/accelerometer_bias
+  - /<vehicle>/calibration/accelerometer_scale
+  - /<vehicle>/calibration/barometer_height_bias

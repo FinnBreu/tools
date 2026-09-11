@@ -1,0 +1,20 @@
+topics:
+  - /tf
+  - /tf_static
+  - /rosout
+  - /<vehicle>/imu
+  - /<vehicle>/pressure
+  - /<vehicle>/temperature
+  - /<vehicle>/barometer/height
+  - /<vehicle>/odometry
+  - /<vehicle>/odometry_naive
+  - /<vehicle>/heading_target
+  - /<vehicle>/angular_velocity_setpoint
+  - /<vehicle>/thrust_setpoint
+  - /<vehicle>/torque_setpoint
+  - /<vehicle>/thruster_command
+  - /<vehicle>/path_follower/debug
+  - /<vehicle>/attitude_controller/debug
+  - /<vehicle>/attitude_controller/attitude_target_debug
+  - /<vehicle>/rate_controller/rates_debug
+  - /<vehicle>/marker
