@@ -1,12 +1,18 @@
 from datetime import datetime
+import json
 from pathlib import Path
 import subprocess
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
+from launch.actions import EmitEvent
 from launch.actions import ExecuteProcess
+from launch.actions import LogInfo
 from launch.actions import OpaqueFunction
+from launch.actions import RegisterEventHandler
+from launch.event_handlers import OnProcessExit
+from launch.events import Shutdown
 from launch.substitutions import LaunchConfiguration
 import yaml
 
@@ -55,6 +61,13 @@ def _record_process(context):
     if vehicle_name == 'uuv02' and use_sim_time:
         raise RuntimeError('uuv02 is the real robot; set use_sim_time:=false.')
     source = 'sim' if use_sim_time else 'real'
+    metadata_json = LaunchConfiguration('metadata_json').perform(context)
+    try:
+        metadata = json.loads(metadata_json)
+    except json.JSONDecodeError as exc:
+        raise RuntimeError(f'metadata_json is not valid JSON: {exc}') from exc
+    if not isinstance(metadata, dict):
+        raise RuntimeError('metadata_json must contain a JSON object.')
 
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
     run_id = f'{timestamp}_{vehicle_name}_{source}_{scenario}'
@@ -62,7 +75,7 @@ def _record_process(context):
     bag_dir = run_dir / 'bag'
     csv_dir = run_dir / 'csv'
     plots_dir = run_dir / 'plots'
-    for path in (bag_dir, csv_dir, plots_dir):
+    for path in (run_dir, csv_dir, plots_dir):
         path.mkdir(parents=True, exist_ok=True)
     (run_dir / 'notes.md').touch(exist_ok=True)
 
@@ -83,6 +96,8 @@ def _record_process(context):
         'plots': str(plots_dir),
         'topics': topics,
     }
+    if metadata:
+        manifest['metadata'] = metadata
     with (run_dir / 'manifest.yaml').open('w', encoding='utf-8') as stream:
         yaml.safe_dump(manifest, stream, sort_keys=False)
 
@@ -106,12 +121,23 @@ def _record_process(context):
         cmd.append('--topics')
         cmd.extend(topics)
 
-    return [
-        ExecuteProcess(
-            cmd=cmd,
-            output='screen',
-            emulate_tty=True,
+    recorder = ExecuteProcess(
+        cmd=cmd,
+        output='screen',
+        emulate_tty=True,
+    )
+    stop_launch_if_recorder_exits = RegisterEventHandler(
+        OnProcessExit(
+            target_action=recorder,
+            on_exit=[
+                EmitEvent(event=Shutdown(reason='rosbag recorder exited')),
+            ],
         )
+    )
+    return [
+        LogInfo(msg=f'Recording run in {run_dir}'),
+        stop_launch_if_recorder_exits,
+        recorder,
     ]
 
 
@@ -142,6 +168,11 @@ def generate_launch_description():
             default_value='false',
             choices=['true', 'false'],
             description='Record using /clock. Use true for simulation.',
+        ),
+        DeclareLaunchArgument(
+            'metadata_json',
+            default_value='{}',
+            description='Optional JSON object stored under metadata in the manifest.',
         ),
         OpaqueFunction(function=_record_process),
     ])

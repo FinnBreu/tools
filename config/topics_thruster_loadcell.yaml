@@ -1,0 +1,17 @@
+topics:
+  - /<vehicle>/thruster_command
+  - /<vehicle>/loadcell/wrench
+  - /<vehicle>/battery_state
+
+fields:
+  /<vehicle>/thruster_command:
+    - control.0
+  /<vehicle>/loadcell/wrench:
+    - wrench.force.x
+    - wrench.force.y
+    - wrench.force.z
+    - wrench.torque.x
+    - wrench.torque.y
+    - wrench.torque.z
+  /<vehicle>/battery_state:
+    - voltage

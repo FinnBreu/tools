@@ -1,17 +1,27 @@
 #!/usr/bin/env python3
 
 import argparse
-import re
+from pathlib import Path
 import subprocess
 import sys
+import xml.etree.ElementTree as ET
+
+from ament_index_python.packages import get_package_share_path
 
 
-def _mesh_paths_to_file_uris(robot_description):
-    return re.sub(
-        r'(<mesh\s+filename=")(/[^"]+)(")',
-        r'\1file://\2\3',
-        robot_description,
-    )
+def _mesh_paths_to_uris(robot_description):
+    root = ET.fromstring(robot_description)
+    package_path = get_package_share_path('hippo_sim')
+    for mesh in root.iter('mesh'):
+        path = Path(mesh.get('filename', ''))
+        if not path.is_absolute():
+            continue
+        if path.is_relative_to(package_path):
+            uri = 'package://hippo_sim/' + path.relative_to(package_path).as_posix()
+        else:
+            uri = path.as_uri()
+        mesh.set('filename', uri)
+    return ET.tostring(root, encoding='unicode')
 
 
 def create_robot_description(input_path, mappings):
@@ -33,7 +43,7 @@ def create_robot_description(input_path, mappings):
         capture_output=True,
         text=True,
     )
-    return _mesh_paths_to_file_uris(result.stdout)
+    return _mesh_paths_to_uris(result.stdout)
 
 
 def main():

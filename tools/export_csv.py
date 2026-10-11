@@ -33,12 +33,15 @@ def _topic_profile(profile, vehicle_name):
     package_share = Path(get_package_share_directory('tools'))
     profile_path = package_share / 'config' / f'topics_{profile}.yaml'
     config = _load_yaml(profile_path)
-    if config.get('all', False):
-        return None
-    return [
+    config['topics'] = [
         topic.replace('<vehicle>', vehicle_name)
         for topic in config.get('topics', [])
     ]
+    config['fields'] = {
+        topic.replace('<vehicle>', vehicle_name): field_names
+        for topic, field_names in config.get('fields', {}).items()
+    }
+    return config
 
 
 def _resolve_paths(args):
@@ -62,12 +65,12 @@ def _resolve_paths(args):
     )
 
 
-def _selected_topics(args, reader, vehicle_name, profile):
+def _selected_topics(args, reader, profile_config):
     available = set(reader.list_topics())
     if args.topics:
         requested = args.topics
-    elif profile:
-        requested = _topic_profile(profile, vehicle_name)
+    elif profile_config:
+        requested = None if profile_config.get('all', False) else profile_config['topics']
     else:
         requested = sorted(
             topic for topic in available
@@ -83,9 +86,22 @@ def _selected_topics(args, reader, vehicle_name, profile):
     return [topic for topic in requested if topic in available]
 
 
-def export_csv(bag_path, out_dir, topics=None):
+def _filter_fields(topic, values, fields_by_topic):
+    requested = fields_by_topic.get(topic)
+    if requested is None:
+        return values
+    missing = [field for field in requested if field not in values]
+    if missing:
+        raise ValueError(
+            f'{topic} does not contain configured fields: {", ".join(missing)}'
+        )
+    return {field: values[field] for field in requested}
+
+
+def export_csv(bag_path, out_dir, topics=None, fields_by_topic=None):
     reader = BagReader(bag_path)
     out_dir.mkdir(parents=True, exist_ok=True)
+    fields_by_topic = fields_by_topic or {}
 
     writers = {}
     files = {}
@@ -97,7 +113,11 @@ def export_csv(bag_path, out_dir, topics=None):
             if t0_ns is None:
                 t0_ns = bag_msg.timestamp_ns
 
-            values = flatten_message(bag_msg.msg)
+            values = _filter_fields(
+                bag_msg.topic,
+                flatten_message(bag_msg.msg),
+                fields_by_topic,
+            )
             row = {
                 't_ros_ns': bag_msg.timestamp_ns,
                 't_rel_s': (bag_msg.timestamp_ns - t0_ns) * 1e-9,
@@ -140,8 +160,16 @@ def main():
     try:
         bag, out, vehicle_name, profile = _resolve_paths(args)
         reader = BagReader(bag)
-        topics = _selected_topics(args, reader, vehicle_name, profile)
-        rows = export_csv(bag, out, topics)
+        profile_config = (
+            _topic_profile(profile, vehicle_name) if profile else {}
+        )
+        topics = _selected_topics(args, reader, profile_config)
+        rows = export_csv(
+            bag,
+            out,
+            topics,
+            fields_by_topic=profile_config.get('fields', {}),
+        )
     except Exception as exc:
         print(f'error: {exc}', file=sys.stderr)
         return 1
